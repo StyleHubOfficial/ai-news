@@ -1,7 +1,4 @@
-
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { NewsArticle, SearchResult } from './types';
 import Header from './components/Header';
 import NewsCard from './components/NewsCard';
 import ArticleModal from './components/ArticleModal';
@@ -14,7 +11,7 @@ import AudioGenerationModal from './components/AudioGenerationModal';
 import { getShortSummary, searchWithGoogle } from './services/geminiService';
 import { BoltIcon, MicIcon, SoundWaveIcon } from './components/icons';
 
-const allArticles: NewsArticle[] = [
+const allArticles = [
     // Page 1
   {
     id: 1,
@@ -105,21 +102,21 @@ const allCategories = [...new Set(allArticles.map(a => a.category))];
 const allSources = [...new Set(allArticles.map(a => a.source))];
 
 
-const App: React.FC = () => {
-    const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+const App = () => {
+    const [selectedArticle, setSelectedArticle] = useState(null);
     const [isChatOpen, setChatOpen] = useState(false);
     const [isLiveAgentOpen, setLiveAgentOpen] = useState(false);
     const [isAudioGenOpen, setAudioGenOpen] = useState(false);
-    const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
+    const [searchResults, setSearchResults] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
-    const [articles, setArticles] = useState<NewsArticle[]>([]);
+    const [articles, setArticles] = useState([]);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [isPersonalizationModalOpen, setPersonalizationModalOpen] = useState(false);
-    const [preferences, setPreferences] = useState<{ categories: string[], sources: string[] }>({ categories: [], sources: [] });
-    const [viewMode, setViewMode] = useState<'grid' | 'reels'>('grid');
-    const [savedArticles, setSavedArticles] = useState<Set<number>>(() => {
+    const [preferences, setPreferences] = useState({ categories: [], sources: [] });
+    const [viewMode, setViewMode] = useState('grid');
+    const [savedArticles, setSavedArticles] = useState(() => {
         try {
             const saved = localStorage.getItem('savedArticles');
             return saved ? new Set(JSON.parse(saved)) : new Set();
@@ -129,13 +126,13 @@ const App: React.FC = () => {
     });
     const [showSavedOnly, setShowSavedOnly] = useState(false);
 
-    const observer = useRef<IntersectionObserver>();
+    const observer = useRef();
 
     useEffect(() => {
         localStorage.setItem('savedArticles', JSON.stringify(Array.from(savedArticles)));
     }, [savedArticles]);
 
-    const toggleSaveArticle = useCallback((articleId: number) => {
+    const toggleSaveArticle = useCallback((articleId) => {
         setSavedArticles(prev => {
             const newSet = new Set(prev);
             if (newSet.has(articleId)) {
@@ -147,7 +144,7 @@ const App: React.FC = () => {
         });
     }, []);
 
-    const fetchArticles = useCallback(async (pageNum: number) => {
+    const fetchArticles = useCallback(async (pageNum) => {
         setIsLoadingMore(true);
         await new Promise(resolve => setTimeout(resolve, 500));
         
@@ -159,7 +156,6 @@ const App: React.FC = () => {
         setArticles(prev => [...prev, ...articlesWithLoadingState]);
 
         newArticles.forEach(async (article) => {
-            // FIX: The getShortSummary function was being called without an argument. It now receives 'article.content' to generate the summary.
             const summary = await getShortSummary(article.content);
             setArticles(prev => prev.map(a => a.id === article.id ? { ...a, summary, isSummaryLoading: false } : a));
         });
@@ -172,7 +168,7 @@ const App: React.FC = () => {
         fetchArticles(1);
     }, [fetchArticles]);
 
-    const lastArticleElementRef = useCallback((node: HTMLDivElement) => {
+    const lastArticleElementRef = useCallback((node) => {
         if (isLoadingMore || showSavedOnly) return;
         if (observer.current) observer.current.disconnect();
         observer.current = new IntersectionObserver(entries => {
@@ -187,7 +183,7 @@ const App: React.FC = () => {
         if (node) observer.current.observe(node);
     }, [isLoadingMore, hasMore, fetchArticles, showSavedOnly]);
 
-    const handleCardClick = (article: NewsArticle) => {
+    const handleCardClick = (article) => {
         setSelectedArticle(article);
     };
 
@@ -199,7 +195,7 @@ const App: React.FC = () => {
         setSearchResults(null);
     };
 
-    const handleSearch = useCallback(async (query: string) => {
+    const handleSearch = useCallback(async (query) => {
         if (!query.trim()) return;
         setIsSearching(true);
         setSearchResults(null);
@@ -214,7 +210,7 @@ const App: React.FC = () => {
         }
     }, []);
 
-    const handleSavePreferences = (newPreferences: { categories: string[], sources: string[] }) => {
+    const handleSavePreferences = (newPreferences) => {
         setPreferences(newPreferences);
     };
 
@@ -228,105 +224,117 @@ const App: React.FC = () => {
         ? allArticles.filter(a => savedArticles.has(a.id))
         : baseFilteredArticles;
 
-    return (
-        <div className="h-full bg-brand-bg font-sans flex flex-col">
-            <Header 
-                onSearch={handleSearch} 
-                isSearching={isSearching} 
-                onPersonalizeClick={() => setPersonalizationModalOpen(true)}
-                viewMode={viewMode}
-                onToggleViewMode={() => setViewMode(prev => prev === 'grid' ? 'reels' : 'grid')}
-                showSavedOnly={showSavedOnly}
-                onToggleShowSaved={() => setShowSavedOnly(prev => !prev)}
-            />
-             {viewMode === 'reels' ? (
-                <ReelsView 
-                    articles={displayedArticles} 
-                    onCardClick={handleCardClick}
-                    onToggleSave={toggleSaveArticle}
-                    savedArticles={savedArticles}
-                />
-            ) : (
-                <main className="flex-grow overflow-y-auto">
-                    <div className="container mx-auto px-4 py-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 animate-slide-up" style={{ animationDelay: '0.4s' }}>
-                            {displayedArticles.length > 0 ? displayedArticles.map((article, index) => (
-                                <div key={article.id} ref={!showSavedOnly && index === displayedArticles.length - 1 ? lastArticleElementRef : null}>
-                                    <NewsCard 
-                                        article={article} 
-                                        onClick={handleCardClick} 
-                                        onToggleSave={toggleSaveArticle}
-                                        isSaved={savedArticles.has(article.id)}
-                                    />
-                                </div>
-                            )) : (
-                                <div className="col-span-full text-center text-brand-text-muted py-12">
-                                    <h3 className="text-2xl font-orbitron">No articles found.</h3>
-                                    <p className="mt-2">
-                                        {showSavedOnly ? "You haven't saved any articles yet." : "Try adjusting your selections in the personalization settings."}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                        {isLoadingMore && !showSavedOnly && (
-                            <div className="flex justify-center items-center py-8">
-                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-primary"></div>
-                            </div>
-                        )}
-                    </div>
-                </main>
-            )}
+    return React.createElement('div', { className: "h-full bg-brand-bg font-sans flex flex-col" },
+        React.createElement(Header, { 
+            onSearch: handleSearch, 
+            isSearching: isSearching, 
+            onPersonalizeClick: () => setPersonalizationModalOpen(true),
+            viewMode: viewMode,
+            onToggleViewMode: () => setViewMode(prev => prev === 'grid' ? 'reels' : 'grid'),
+            showSavedOnly: showSavedOnly,
+            onToggleShowSaved: () => setShowSavedOnly(prev => !prev)
+        }),
+        
+        viewMode === 'reels' ? 
+            React.createElement(ReelsView, { 
+                articles: displayedArticles, 
+                onCardClick: handleCardClick,
+                onToggleSave: toggleSaveArticle,
+                savedArticles: savedArticles
+            }) : 
+            React.createElement('main', { className: "flex-grow overflow-y-auto" },
+                React.createElement('div', { className: "container mx-auto px-4 py-8" },
+                    React.createElement('div', { 
+                        className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 animate-slide-up", 
+                        style: { animationDelay: '0.4s' } 
+                    },
+                        displayedArticles.length > 0 ? displayedArticles.map((article, index) =>
+                            React.createElement('div', { 
+                                key: article.id, 
+                                ref: !showSavedOnly && index === displayedArticles.length - 1 ? lastArticleElementRef : null 
+                            },
+                                React.createElement(NewsCard, {
+                                    article: article,
+                                    onClick: handleCardClick,
+                                    onToggleSave: toggleSaveArticle,
+                                    isSaved: savedArticles.has(article.id)
+                                })
+                            )
+                        ) : React.createElement('div', { 
+                            className: "col-span-full text-center text-brand-text-muted py-12" 
+                        },
+                            React.createElement('h3', { className: "text-2xl font-orbitron" }, "No articles found."),
+                            React.createElement('p', { className: "mt-2" },
+                                showSavedOnly ? "You haven't saved any articles yet." : "Try adjusting your selections in the personalization settings."
+                            )
+                        )
+                    ),
+                    isLoadingMore && !showSavedOnly && React.createElement('div', { 
+                        className: "flex justify-center items-center py-8" 
+                    },
+                        React.createElement('div', { 
+                            className: "animate-spin rounded-full h-10 w-10 border-b-2 border-brand-primary" 
+                        })
+                    )
+                )
+            ),
 
-            {selectedArticle && (
-                <ArticleModal 
-                    article={selectedArticle} 
-                    onClose={handleCloseModal}
-                    onToggleSave={toggleSaveArticle}
-                    isSaved={savedArticles.has(selectedArticle.id)}
-                />
-            )}
-            {searchResults && <SearchResultsModal result={searchResults} onClose={handleCloseSearch} isLoading={isSearching} />}
-            {isPersonalizationModalOpen && (
-                <PersonalizationModal
-                    allCategories={allCategories}
-                    allSources={allSources}
-                    currentPreferences={preferences}
-                    onSave={handleSavePreferences}
-                    onClose={() => setPersonalizationModalOpen(false)}
-                />
-            )}
-            {isAudioGenOpen && <AudioGenerationModal articles={allArticles} onClose={() => setAudioGenOpen(false)} />}
-            
-            <div className="fixed bottom-6 right-6 flex flex-col items-center gap-4 z-50">
-                 <button
-                    onClick={() => setAudioGenOpen(true)}
-                    className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-accent to-purple-600 flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300"
-                    aria-label="Open Audio Synthesis"
-                >
-                    <SoundWaveIcon />
-                </button>
-                <button
-                    onClick={() => setLiveAgentOpen(true)}
-                    className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-secondary to-brand-accent flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300 animate-pulse-glow"
-                    aria-label="Open Live Agent"
-                >
-                    <MicIcon />
-                </button>
-                <button
-                    onClick={() => setChatOpen(prev => !prev)}
-                    className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300"
-                    aria-label="Toggle Chat"
-                >
-                    <BoltIcon />
-                </button>
-            </div>
+        selectedArticle && React.createElement(ArticleModal, {
+            article: selectedArticle,
+            onClose: handleCloseModal,
+            onToggleSave: toggleSaveArticle,
+            isSaved: savedArticles.has(selectedArticle.id)
+        }),
 
-            <ChatBot 
-                isOpen={isChatOpen} 
-                onClose={() => setChatOpen(false)} 
-            />
-            {isLiveAgentOpen && <LiveAgent onClose={() => setLiveAgentOpen(false)} />}
-        </div>
+        searchResults && React.createElement(SearchResultsModal, {
+            result: searchResults,
+            onClose: handleCloseSearch,
+            isLoading: isSearching
+        }),
+
+        isPersonalizationModalOpen && React.createElement(PersonalizationModal, {
+            allCategories: allCategories,
+            allSources: allSources,
+            currentPreferences: preferences,
+            onSave: handleSavePreferences,
+            onClose: () => setPersonalizationModalOpen(false)
+        }),
+
+        isAudioGenOpen && React.createElement(AudioGenerationModal, {
+            articles: allArticles,
+            onClose: () => setAudioGenOpen(false)
+        }),
+
+        React.createElement('div', { 
+            className: "fixed bottom-6 right-6 flex flex-col items-center gap-4 z-50" 
+        },
+            React.createElement('button', {
+                onClick: () => setAudioGenOpen(true),
+                className: "w-16 h-16 rounded-full bg-gradient-to-br from-brand-accent to-purple-600 flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300",
+                'aria-label': "Open Audio Synthesis"
+            }, React.createElement(SoundWaveIcon)),
+
+            React.createElement('button', {
+                onClick: () => setLiveAgentOpen(true),
+                className: "w-16 h-16 rounded-full bg-gradient-to-br from-brand-secondary to-brand-accent flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300 animate-pulse-glow",
+                'aria-label': "Open Live Agent"
+            }, React.createElement(MicIcon)),
+
+            React.createElement('button', {
+                onClick: () => setChatOpen(prev => !prev),
+                className: "w-16 h-16 rounded-full bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300",
+                'aria-label': "Toggle Chat"
+            }, React.createElement(BoltIcon))
+        ),
+
+        React.createElement(ChatBot, {
+            isOpen: isChatOpen,
+            onClose: () => setChatOpen(false)
+        }),
+
+        isLiveAgentOpen && React.createElement(LiveAgent, {
+            onClose: () => setLiveAgentOpen(false)
+        })
     );
 };
 
