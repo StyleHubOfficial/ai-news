@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,91 +9,64 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #020617;
-            color: #e2e8f0;
-            font-family: 'Roboto', sans-serif;
-        }
-        
-        /* Ensure full height */
-        html, body, #root {
-            height: 100%;
-        }
-        
-        /* Custom animations */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes slideUp {
-            from { 
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to { 
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes pulseGlow {
-            0%, 100% { 
-                box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
-            }
-            50% { 
-                box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
-            }
-        }
-        
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-out;
-        }
-        
-        .animate-slide-up {
-            animation: slideUp 0.5s ease-out;
-        }
-        
-        .animate-pulse-glow {
-            animation: pulseGlow 2s infinite;
-        }
-    </style>
-</head>
-<body class="bg-brand-bg text-brand-text">
-    <div id="root" class="h-full">
-        <!-- Loading fallback -->
-        <div class="h-full flex items-center justify-center bg-gradient-to-br from-gray-900 to-blue-900">
-            <div class="text-center">
-                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-                <h2 class="text-xl font-orbitron text-cyan-400">Loading Gemini News Hub...</h2>
-            </div>
-        </div>
-    </div>
-
-    <!-- Load React from CDN -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <!-- Load your app directly -->
     <script>
-        // Simple error handling
-        console.log('Starting app initialization...');
-        
-        // Check if React is loaded
-        if (!window.React) {
-            console.error('React not loaded');
-            document.getElementById('root').innerHTML = `
-                <div class="h-full flex items-center justify-center bg-red-900">
-                    <div class="text-center text-white">
-                        <h2 class="text-2xl font-bold mb-4">Error Loading App</h2>
-                        <p>React failed to load. Please check your internet connection.</p>
-                    </div>
-                </div>
-            `;
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Roboto', 'sans-serif'],
+              orbitron: ['Orbitron', 'sans-serif'],
+            },
+            colors: {
+              'brand-bg': '#020617',
+              'brand-surface': '#0f172a',
+              'brand-primary': '#0ea5e9',
+              'brand-secondary': '#6366f1',
+              'brand-accent': '#e11d48',
+              'brand-text': '#e2e8f0',
+              'brand-text-muted': '#94a3b8',
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out',
+              'slide-up': 'slideUp 0.5s ease-out',
+              'pulse-glow': 'pulseGlow 2s infinite ease-in-out',
+              'pulse-border': 'pulseBorder 2s infinite ease-in-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: 0 },
+                '100%': { opacity: 1 },
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(20px)', opacity: 0 },
+                '100%': { transform: 'translateY(0)', opacity: 1 },
+              },
+              pulseGlow: {
+                '0%, 100%': { boxShadow: '0 0 10px #0ea5e9, 0 0 20px #0ea5e9' },
+                '50%': { boxShadow: '0 0 20px #6366f1, 0 0 30px #6366f1' },
+              },
+              pulseBorder: {
+                '0%, 100%': { borderColor: 'rgba(14, 165, 233, 0.4)' },
+                '50%': { borderColor: 'rgba(99, 102, 241, 0.8)' },
+              }
+            }
+          }
         }
+      }
     </script>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1"
+  }
+}
+</script>
+</head>
+<body class="bg-brand-bg text-brand-text h-screen overflow-hidden">
+    <div id="root" class="h-full"></div>
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>
