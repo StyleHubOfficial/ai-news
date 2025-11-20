@@ -224,118 +224,107 @@ const App = () => {
         ? allArticles.filter(a => savedArticles.has(a.id))
         : baseFilteredArticles;
 
-    return React.createElement('div', { className: "h-full bg-brand-bg font-sans flex flex-col" },
-        React.createElement(Header, { 
-            onSearch: handleSearch, 
-            isSearching: isSearching, 
-            onPersonalizeClick: () => setPersonalizationModalOpen(true),
-            viewMode: viewMode,
-            onToggleViewMode: () => setViewMode(prev => prev === 'grid' ? 'reels' : 'grid'),
-            showSavedOnly: showSavedOnly,
-            onToggleShowSaved: () => setShowSavedOnly(prev => !prev)
-        }),
-        
-        viewMode === 'reels' ? 
-            React.createElement(ReelsView, { 
-                articles: displayedArticles, 
-                onCardClick: handleCardClick,
-                onToggleSave: toggleSaveArticle,
-                savedArticles: savedArticles
-            }) : 
-            React.createElement('main', { className: "flex-grow overflow-y-auto" },
-                React.createElement('div', { className: "container mx-auto px-4 py-8" },
-                    React.createElement('div', { 
-                        className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 animate-slide-up", 
-                        style: { animationDelay: '0.4s' } 
-                    },
-                        displayedArticles.length > 0 ? displayedArticles.map((article, index) =>
-                            React.createElement('div', { 
-                                key: article.id, 
-                                ref: !showSavedOnly && index === displayedArticles.length - 1 ? lastArticleElementRef : null 
-                            },
-                                React.createElement(NewsCard, {
-                                    article: article,
-                                    onClick: handleCardClick,
-                                    onToggleSave: toggleSaveArticle,
-                                    isSaved: savedArticles.has(article.id)
-                                })
-                            )
-                        ) : React.createElement('div', { 
-                            className: "col-span-full text-center text-brand-text-muted py-12" 
-                        },
-                            React.createElement('h3', { className: "text-2xl font-orbitron" }, "No articles found."),
-                            React.createElement('p', { className: "mt-2" },
-                                showSavedOnly ? "You haven't saved any articles yet." : "Try adjusting your selections in the personalization settings."
-                            )
-                        )
-                    ),
-                    isLoadingMore && !showSavedOnly && React.createElement('div', { 
-                        className: "flex justify-center items-center py-8" 
-                    },
-                        React.createElement('div', { 
-                            className: "animate-spin rounded-full h-10 w-10 border-b-2 border-brand-primary" 
-                        })
-                    )
-                )
-            ),
+    return (
+        <div className="h-full bg-brand-bg font-sans flex flex-col">
+            <Header 
+                onSearch={handleSearch} 
+                isSearching={isSearching} 
+                onPersonalizeClick={() => setPersonalizationModalOpen(true)}
+                viewMode={viewMode}
+                onToggleViewMode={() => setViewMode(prev => prev === 'grid' ? 'reels' : 'grid')}
+                showSavedOnly={showSavedOnly}
+                onToggleShowSaved={() => setShowSavedOnly(prev => !prev)}
+            />
+             {viewMode === 'reels' ? (
+                <ReelsView 
+                    articles={displayedArticles} 
+                    onCardClick={handleCardClick}
+                    onToggleSave={toggleSaveArticle}
+                    savedArticles={savedArticles}
+                />
+            ) : (
+                <main className="flex-grow overflow-y-auto">
+                    <div className="container mx-auto px-4 py-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 animate-slide-up" style={{ animationDelay: '0.4s' }}>
+                            {displayedArticles.length > 0 ? displayedArticles.map((article, index) => (
+                                <div key={article.id} ref={!showSavedOnly && index === displayedArticles.length - 1 ? lastArticleElementRef : null}>
+                                    <NewsCard 
+                                        article={article} 
+                                        onClick={handleCardClick} 
+                                        onToggleSave={toggleSaveArticle}
+                                        isSaved={savedArticles.has(article.id)}
+                                    />
+                                </div>
+                            )) : (
+                                <div className="col-span-full text-center text-brand-text-muted py-12">
+                                    <h3 className="text-2xl font-orbitron">No articles found.</h3>
+                                    <p className="mt-2">
+                                        {showSavedOnly ? "You haven't saved any articles yet." : "Try adjusting your selections in the personalization settings."}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        {isLoadingMore && !showSavedOnly && (
+                            <div className="flex justify-center items-center py-8">
+                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-primary"></div>
+                            </div>
+                        )}
+                    </div>
+                </main>
+            )}
 
-        selectedArticle && React.createElement(ArticleModal, {
-            article: selectedArticle,
-            onClose: handleCloseModal,
-            onToggleSave: toggleSaveArticle,
-            isSaved: savedArticles.has(selectedArticle.id)
-        }),
+            {selectedArticle && (
+                <ArticleModal 
+                    article={selectedArticle} 
+                    onClose={handleCloseModal}
+                    onToggleSave={toggleSaveArticle}
+                    isSaved={savedArticles.has(selectedArticle.id)}
+                />
+            )}
+            {searchResults && <SearchResultsModal result={searchResults} onClose={handleCloseSearch} isLoading={isSearching} />}
+            {isPersonalizationModalOpen && (
+                <PersonalizationModal
+                    allCategories={allCategories}
+                    allSources={allSources}
+                    currentPreferences={preferences}
+                    onSave={handleSavePreferences}
+                    onClose={() => setPersonalizationModalOpen(false)}
+                />
+            )}
+            {isAudioGenOpen && <AudioGenerationModal articles={allArticles} onClose={() => setAudioGenOpen(false)} />}
+            
+            <div className="fixed bottom-6 right-6 flex flex-col items-center gap-4 z-50">
+                 <button
+                    onClick={() => setAudioGenOpen(true)}
+                    className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-accent to-purple-600 flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300"
+                    aria-label="Open Audio Synthesis"
+                >
+                    <SoundWaveIcon />
+                </button>
+                <button
+                    onClick={() => setLiveAgentOpen(true)}
+                    className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-secondary to-brand-accent flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300 animate-pulse-glow"
+                    aria-label="Open Live Agent"
+                >
+                    <MicIcon />
+                </button>
+                <button
+                    onClick={() => setChatOpen(prev => !prev)}
+                    className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300"
+                    aria-label="Toggle Chat"
+                >
+                    <BoltIcon />
+                </button>
+            </div>
 
-        searchResults && React.createElement(SearchResultsModal, {
-            result: searchResults,
-            onClose: handleCloseSearch,
-            isLoading: isSearching
-        }),
-
-        isPersonalizationModalOpen && React.createElement(PersonalizationModal, {
-            allCategories: allCategories,
-            allSources: allSources,
-            currentPreferences: preferences,
-            onSave: handleSavePreferences,
-            onClose: () => setPersonalizationModalOpen(false)
-        }),
-
-        isAudioGenOpen && React.createElement(AudioGenerationModal, {
-            articles: allArticles,
-            onClose: () => setAudioGenOpen(false)
-        }),
-
-        React.createElement('div', { 
-            className: "fixed bottom-6 right-6 flex flex-col items-center gap-4 z-50" 
-        },
-            React.createElement('button', {
-                onClick: () => setAudioGenOpen(true),
-                className: "w-16 h-16 rounded-full bg-gradient-to-br from-brand-accent to-purple-600 flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300",
-                'aria-label': "Open Audio Synthesis"
-            }, React.createElement(SoundWaveIcon)),
-
-            React.createElement('button', {
-                onClick: () => setLiveAgentOpen(true),
-                className: "w-16 h-16 rounded-full bg-gradient-to-br from-brand-secondary to-brand-accent flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300 animate-pulse-glow",
-                'aria-label': "Open Live Agent"
-            }, React.createElement(MicIcon)),
-
-            React.createElement('button', {
-                onClick: () => setChatOpen(prev => !prev),
-                className: "w-16 h-16 rounded-full bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform duration-300",
-                'aria-label': "Toggle Chat"
-            }, React.createElement(BoltIcon))
-        ),
-
-        React.createElement(ChatBot, {
-            isOpen: isChatOpen,
-            onClose: () => setChatOpen(false)
-        }),
-
-        isLiveAgentOpen && React.createElement(LiveAgent, {
-            onClose: () => setLiveAgentOpen(false)
-        })
+            <ChatBot 
+                isOpen={isChatOpen} 
+                onClose={() => setChatOpen(false)} 
+            />
+            {isLiveAgentOpen && <LiveAgent onClose={() => setLiveAgentOpen(false)} />}
+        </div>
     );
 };
 
 export default App;
+                
